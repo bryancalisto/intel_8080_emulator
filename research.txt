@@ -1,0 +1,22 @@
+Intel 8086 (1978)
+
+
+
+
+- i8086 fundamentals
+https://en.wikipedia.org/wiki/Intel_8086
+
+- Basic idea behind the assembly to binary conversion process (This process is called encoding)
+https://stackoverflow.com/questions/3826692/how-do-i-translate-assembly-to-binary
+
+- More about encoding
+https://stackoverflow.com/questions/39411200/how-does-the-cpu-translate-assembly-to-binary
+
+- Addressing, I/O and other processor topics
+The art of electronics book from Paul Horowitz and Winfield Hill
+
+- Good reference (Intel 8080 emulator)
+https://github.com/superzazu/8080/blob/master
+
+- Friendly instruction set reference
+https://jbwyatt.com/253/emu/8086_instruction_set.html
