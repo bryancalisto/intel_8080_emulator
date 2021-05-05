@@ -36,13 +36,16 @@ typedef struct i8086
   uint16_t cs, ds, es, ss;
 
   // Flags (overflow[11], direction[10], interrupt[9], trap[8], signed[7], zero[6], adjust[4], parity[2], carry[0])
-  bool of = 0, df = 0, iif = 0, tf = 0, sf = 0, zf = 0, af = 0, pf = 0, cf = 0;
+  bool of, df, iif, tf, sf, zf, af, pf, cf;
 
   // Some other necessary state
-  bool halted = 0;
-  bool interrupt_waiting = 0;
+  bool halted;
+  bool interrupt_waiting;
   uint16_t interrupt_vector;
   uint16_t interrupt_delay;
+
+  // To contain arbitrary data in the future
+  void *user_data;
 } i8086;
 
 void i8086_init(i8086 *const p);
