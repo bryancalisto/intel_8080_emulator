@@ -1,0 +1,15 @@
+CC=cl.exe
+LINK=link.exe
+
+TARGET = i8086_tests.exe
+SOURCES = i8086_tests.c i8086.c
+OBJ = i8086_tests.obj i8086.obj 
+
+all: $(TARGET)
+
+$(TARGET): $(SOURCES)
+	echo Building...
+	$(CC) $(SOURCES) /link /out:$(TARGET)
+
+clean:
+	del $(OBJ) $(TARGET)
