@@ -24,7 +24,8 @@ typedef struct i8086
   uint16_t (*port_out)(void *, uint16_t, uint16_t);
 
   // Main registers
-  uint16_t a, b, c, d, h, l; // h=high, l=low
+  uint16_t a, b, c, d;
+  uint8_t al, ah, bl, bh, cl, ch, dl, dh;
 
   // Index registers
   uint16_t si, di, bp, sp;
@@ -40,6 +41,7 @@ typedef struct i8086
 
   // Some other necessary state
   bool halted;
+  bool locked;
   bool interrupt_waiting;
   uint16_t interrupt_vector;
   uint16_t interrupt_delay;
