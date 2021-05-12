@@ -20,3 +20,9 @@ https://github.com/superzazu/8080/blob/master
 
 - Friendly instruction set reference
 https://jbwyatt.com/253/emu/8086_instruction_set.html
+
+- To understand mod, reg and r/m opcode conventions
+http://www.c-jump.com/CIS77/CPU/x86/X77_0060_mod_reg_r_m_byte.htm
+
+- c-jump.com is super mega great to learn addressing modes and it's relation to opcode decoding in this architecture
+https://www.youtube.com/watch?v=DkJxrJBJQms
