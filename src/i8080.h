@@ -1,9 +1,9 @@
 /*
-Intel 8086 emulator
+Intel 8080 emulator
 */
 
-#ifndef I8086_H
-#define I8086_H
+#ifndef i8080_H
+#define i8080_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -11,17 +11,22 @@ Intel 8086 emulator
 
 /*According to the docs, all registers are 16 bit wide*/
 
-typedef struct i8086
+typedef struct i8080
 {
-  // Memory ops
-  uint8_t (*read_byte)(void *, uint16_t);
-  void (*write_byte)(void *, uint16_t, uint8_t);
-  uint16_t (*read_word)(void *, uint16_t);
-  void (*write_word)(void *, uint16_t, uint16_t);
+  /* 
+  Memory ops
+  Parameters:
+  1st = address
+  2sd = value
+  */
+  uint8_t (*read_byte)(uint16_t);
+  void (*write_byte)(uint16_t, uint8_t);
+  uint16_t (*read_word)(uint16_t);
+  void (*write_word)(uint16_t, uint16_t);
 
   // I/O ops
-  uint16_t (*port_in)(void *, uint16_t);
-  uint16_t (*port_out)(void *, uint16_t, uint16_t);
+  uint16_t (*port_in)(uint16_t);
+  uint16_t (*port_out)(uint16_t, uint16_t);
 
   // Main registers
   uint16_t a, b, c, d;
@@ -45,14 +50,9 @@ typedef struct i8086
   bool interrupt_waiting;
   uint16_t interrupt_vector;
   uint16_t interrupt_delay;
+} i8080;
 
-  // To contain arbitrary data in the future
-  void *user_data;
-} i8086;
+void i8080_init(i8080 *const p);
+void i8080_step(i8080 *const p);
 
-void i8086_init(i8086 *const p);
-void i8086_step(i8086 *const p);
-void i8086_interrupt(i8086 *const p, uint8_t opcode);
-void i8086_debug(i8086 *const p, bool show_asm);
-
-#endif // I8086_H
+#endif // i8080_H

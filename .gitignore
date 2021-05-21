@@ -34,3 +34,6 @@
 # Debug
 *.pdb
 *.ilk
+
+# Others
+*.vscode

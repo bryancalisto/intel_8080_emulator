@@ -1,68 +1,56 @@
-/*
-Intel 8086 processor emulator
-*/
-
-#include "i8086.h"
-
-/*To facilitate the parsing of mod_reg_r/m byte*/
-typedef struct mod_reg_rm
-{
-  uint8_t mod;
-  uint8_t reg;
-  uint8_t r_m;
-} mod_reg_rm;
+#include "i8080.h"
+#include "opcode_parser.h"
 
 /* GENERIC MEMORY OPS */
-
 // Read byte from memory
-static inline uint8_t i8086_rb(i8086 *const p, uint16_t addr)
+static inline uint8_t i8080_rb(i8080 *const p, uint16_t addr)
 {
-  return p->read_byte(p->user_data, addr);
+  return p->read_byte(addr);
 }
 
 // Write byte to memory
-static inline void i8086_wb(i8086 *const p, uint16_t addr, uint8_t data)
+static inline void i8080_wb(i8080 *const p, uint16_t addr, uint8_t data)
 {
-  p->write_byte(p->user_data, addr, data);
+  p->write_byte(addr, data);
 }
 
 // Read word from memory
-static inline uint16_t i8086_rw(i8086 *const p, uint16_t addr)
+static inline uint16_t i8080_rw(i8080 *const p, uint16_t addr)
 {
-  return p->read_word(p->user_data, addr);
+  return p->read_word(addr);
 }
 
 // Write word to memory
-static inline void i8086_ww(i8086 *const p, uint16_t addr, uint16_t data)
+static inline void i8080_ww(i8080 *const p, uint16_t addr, uint16_t data)
 {
-  p->write_word(p->user_data, addr, data);
+  p->write_word(addr, data);
 }
 
-// Read next byte and update program counter
-static inline uint8_t i8086_next_byte(i8086 *const p)
+static inline uint8_t i8080_next_b(i8080 *const p)
 {
-  return i8086_rb(p, p->pc++);
+  uint16_t data = i8080_rb(p, p->pc);
+  p->pc += 2;
+  return data;
 }
 
-// Read next word and update program counter
-static inline uint16_t i8086_next_word(i8086 *const p)
+static inline uint16_t i8080_next_w(i8080 *const p)
 {
-  uint16_t data = i8086_rw(p, p->pc);
+  uint16_t data = i8080_rw(p, p->pc);
   p->pc += 2;
   return data;
 }
 
 /* STACK OPS */
 
-static inline void i8086_push_stack(i8086 *const p, uint16_t data)
+static inline void i8080_push_stack(i8080 *const p, uint16_t data)
 {
   p->sp -= 2;
-  i8086_ww(p, p->sp, data);
+  i8080_ww(p, p->sp, data);
 }
 
-static inline uint16_t i8086_pop_stack(i8086 *const p)
+static inline uint16_t i8080_pop_stack(i8080 *const p)
 {
-  uint16_t data = i8086_rw(p, p->sp);
+  uint16_t data = i8080_rw(p, p->sp);
   p->sp += 2;
   return data;
 }
@@ -80,14 +68,6 @@ static inline bool parity(uint16_t data)
   return (one_bits & 1) == 0;
 }
 
-/* Util to set flags that are commonly set together: Zero, signed, parity*/
-void set_ZSP(i8086 *const p, uint16_t val)
-{
-  p->zf = val == 0;
-  p->sf = (val >> 15);
-  p->pf = parity(val);
-}
-
 /* 
 'bits' parameter is used to define the size of the summands in bits (this carry detector 
 could be used for 4, 8 and 16 bit numbers).
@@ -99,57 +79,29 @@ static inline bool carry(uint8_t bits, uint16_t a, uint16_t b, bool carr)
   return carry & (1 << bits);
 }
 
+/* Util to set flags that are commonly set together: Zero, signed, parity*/
+void set_ZSP(i8080 *const p, uint16_t val)
+{
+  p->zf = val == 0;
+  p->sf = (val >> 15);
+  p->pf = parity(val);
+}
+
 /* Opcode helpers*/
-/*
-Checks if last byte of opcode ('w', according to the intel manual) is 1 or 0. 
-If 1, then it's a word operation, else it's a byte operation
-*/
-static inline bool is_word_op(uint8_t byte)
-{
-  return (byte & 0b1);
-}
-
-static inline bool is_destiny_to(uint8_t byte)
-{
-  return (byte & 0b10);
-}
-
-static inline uint8_t get_mod(uint8_t byte)
-{
-  // Mod is defined by the two highest bits
-  return (byte >> 6) & 0b11;
-}
-
-static inline uint8_t get_r_m(uint8_t byte)
-{
-  return (byte >> 3) & 0b111;
-}
-
-/*Helper to decode the second byte of an instruction*/
-void decodeSecondOp(mod_reg_rm *mrrm, uint8_t op)
-{
-  mrrm->mod = (op >> 6) & 0b11;
-  mrrm->r_m = (op >> 3) & 0b111;
-  mrrm->reg = op & 0b111;
-}
 
 /*ARITHMETIC*/
-static inline void i8086_add(i8086 *const p, uint8_t *const reg, uint8_t val, bool cy)
+// THIS FUNCTION REQUIRES REFACTORING BECAUSE IT'S NOT ADAPTED TO 16 BIT PROCESSOR
+static inline void i8080_add(i8080 *const p, uint16_t *const reg, uint16_t val, bool cy)
 {
-  uint8_t result = *reg + val + cy;
+  uint16_t result = *reg + val + cy;
   p->cf = carry(8, *reg, val, cy);
   SET_ZSP(p, result);
   *reg = result;
 }
 
-void i8086_exec(i8086 *const p, mod_reg_rm *m_r_rm, uint8_t opcode)
+// Executes one instruction
+void i8080_exec(i8080 *const p, uint8_t opcode)
 {
-  uint8_t mod;
-  uint8_t next_b_1;
-  uint8_t next_b_2;
-  uint16_t next_w_1;
-  uint16_t next_w_2;
-
   switch (opcode)
   {
   /*DATA TRANSFER*/
@@ -204,12 +156,6 @@ void i8086_exec(i8086 *const p, mod_reg_rm *m_r_rm, uint8_t opcode)
     break;
     /*Immediate to register/memory*/
   case 0xC6: // byte
-    uint8_t op = i8086_next_byte(p);
-    decodeSecondOp(m_r_rm, op);
-    uint8_t val = i8086_next_byte(p);
-    if (m_r_rm->mod == 0b11) // immediate -> register
-    {
-    }
     break;
   case 0xC7: // word
     break;
@@ -218,7 +164,34 @@ void i8086_exec(i8086 *const p, mod_reg_rm *m_r_rm, uint8_t opcode)
   case 0x8E:
     break;
 
-  /*Processor control*/
+  /*ARITHMETIC*/
+  /*LOGIC*/
+  /*STRING MANIPULATION*/
+  case 0xF2: // REPNE (aka REPNZ)
+    // Read next instruction and execute it while condition is true
+    while (p->c != 0 || p->zf == 0)
+    {
+      p->c--;
+    }
+    break;
+  case 0xF3: // REP (aka REPE or REPZ)
+             // Read next instruction and execute it while condition is true
+    uint8_t next_inst = i8080_next_b(p);
+    while (p->c == 0 || p->zf != 0)
+    {
+      switch (next_inst)
+      {
+      case 0x6C:
+        break;
+      case 0x6D:
+        break;
+      }
+      p->c--;
+    }
+    break;
+  /*CONTROL TRANSFER*/
+
+  /*PROCESSOR CONTROL*/
 
   // Clear carry
   case 0xF8:

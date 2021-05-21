@@ -1,4 +1,4 @@
-#include <i8086.h>
+#include <i8080.h>
 
 /*OPCODE DECODE HELPERS*/
 
@@ -37,7 +37,7 @@ uint8_t parse_sw(uint8_t byte)
 }
 
 // Returns the address of a processor 16 bit general purpose register based on 'reg' 3 bits
-uint16_t *get_reg(i8086 *const p, uint8_t reg, bool word)
+uint16_t *get_reg(i8080 *const p, uint8_t reg, bool word)
 {
   if (word)
   {
@@ -92,7 +92,7 @@ uint16_t *get_reg(i8086 *const p, uint8_t reg, bool word)
 }
 
 // Returns a pointer to the corresponding processor segment register, based on 'reg' 2 bits
-uint16_t *get_sreg(i8086 *const p, uint8_t reg)
+uint16_t *get_sreg(i8080 *const p, uint8_t reg)
 {
   switch (reg)
   {
@@ -111,7 +111,7 @@ uint16_t *get_sreg(i8086 *const p, uint8_t reg)
 }
 
 // Returns the EA (efective address) based on r/m field
-uint32_t get_ea_from_rm(i8086 *const p, uint8_t rm, uint8_t mod)
+uint32_t get_ea_from_rm(i8080 *const p, uint8_t rm, uint8_t mod)
 {
   uint8_t left = 0;
   uint8_t right = 0;
