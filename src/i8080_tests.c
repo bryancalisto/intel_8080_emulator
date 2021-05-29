@@ -13,17 +13,7 @@ static uint8_t read_b(uint16_t addr)
   return memory[addr];
 }
 
-static uint8_t read_w(uint16_t addr)
-{
-  return memory[addr];
-}
-
 static void write_b(uint16_t addr, uint8_t val)
-{
-  return memory[addr] = val;
-}
-
-static void write_w(uint16_t addr, uint16_t val)
 {
   return memory[addr] = val;
 }

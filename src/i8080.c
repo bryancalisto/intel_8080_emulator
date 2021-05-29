@@ -14,18 +14,6 @@ static inline void i8080_wb(i8080 *const p, uint16_t addr, uint8_t data)
   p->write_byte(addr, data);
 }
 
-// Read word from memory
-static inline uint16_t i8080_rw(i8080 *const p, uint16_t addr)
-{
-  return p->read_word(addr);
-}
-
-// Write word to memory
-static inline void i8080_ww(i8080 *const p, uint16_t addr, uint16_t data)
-{
-  p->write_word(addr, data);
-}
-
 static inline uint8_t i8080_next_b(i8080 *const p)
 {
   uint16_t data = i8080_rb(p, p->pc);
@@ -33,31 +21,23 @@ static inline uint8_t i8080_next_b(i8080 *const p)
   return data;
 }
 
-static inline uint16_t i8080_next_w(i8080 *const p)
-{
-  uint16_t data = i8080_rw(p, p->pc);
-  p->pc += 2;
-  return data;
-}
-
 /* STACK OPS */
-
-static inline void i8080_push_stack(i8080 *const p, uint16_t data)
+static inline void i8080_push_stack(i8080 *const p, uint8_t data)
 {
   p->sp -= 2;
   i8080_ww(p, p->sp, data);
 }
 
-static inline uint16_t i8080_pop_stack(i8080 *const p)
+static inline uint8_t i8080_pop_stack(i8080 *const p)
 {
-  uint16_t data = i8080_rw(p, p->sp);
+  uint8_t data = i8080_rw(p, p->sp);
   p->sp += 2;
   return data;
 }
 
 /* GENERAL HELPERS */
 
-static inline bool parity(uint16_t data)
+static inline bool parity(uint8_t data)
 {
   uint8_t one_bits = 0;
   for (int i = 0; i < 16; i++)
@@ -205,21 +185,16 @@ void i8080_exec(i8080 *const p, uint8_t opcode)
   case 0xF9:
     p->cf = 1;
     break;
-  // Clear direction
   case 0xFC:
-    p->df = 0;
     break;
   // Set direction
   case 0xFD:
-    p->df = 1;
     break;
   // Clear interrupt
   case 0xFA:
-    p->iif = 0;
     break;
   // Set interrupt
   case 0xFB:
-    p->iif = 1;
     break;
   // Halt
   case 0xF4:
@@ -227,7 +202,6 @@ void i8080_exec(i8080 *const p, uint8_t opcode)
     break;
   // Wait
   case 0x9B:
-    p->interrupt_waiting = 1;
     break;
   // Escape (to external device)
   // NOT IMPLEMENTED YET
