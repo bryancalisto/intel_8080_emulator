@@ -1,10 +1,10 @@
-Intel 8086 (1978)
+Intel 8080 (1974)
 
 
 
 
-- i8086 fundamentals
-https://en.wikipedia.org/wiki/Intel_8086
+- i8080 fundamentals
+https://en.wikipedia.org/wiki/Intel_8080
 
 - Basic idea behind the assembly to binary conversion process (This process is called encoding)
 https://stackoverflow.com/questions/3826692/how-do-i-translate-assembly-to-binary
