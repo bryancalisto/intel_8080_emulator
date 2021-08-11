@@ -1,9 +1,9 @@
 CC=cl.exe
 LINK=link.exe
 
-TARGET = i8086_tests.exe
-SOURCES = i8086_tests.c i8086.c
-OBJ = i8086_tests.obj i8086.obj 
+TARGET = i8080_tests.exe
+SOURCES = i8080_tests.c i8080.c instructions.c
+OBJ = i8080_tests.obj i8080.obj instructions.obj
 
 all: $(TARGET)
 

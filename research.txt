@@ -2,6 +2,8 @@ Intel 8080 (1974)
 
 
 
+- FUNDAMENTAL READ BEFORE MAKE AN EMULATOR
+https://fms.komkon.org/EMUL8/HOWTO.html#LABA
 
 - i8080 fundamentals
 https://en.wikipedia.org/wiki/Intel_8080

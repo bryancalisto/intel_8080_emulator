@@ -7,15 +7,14 @@
 static uint8_t *memory = NULL;
 
 // The actual implementations of the i8080 structure function pointers
-/*Memory*/
-static uint8_t read_b(uint16_t addr)
+static uint8_t read_byte(uint16_t addr)
 {
   return memory[addr];
 }
 
-static void write_b(uint16_t addr, uint8_t val)
+static void write_byte(uint16_t addr, uint8_t val)
 {
-  return memory[addr] = val;
+  memory[addr] = val;
 }
 
 int main()
@@ -24,11 +23,22 @@ int main()
 
   if (memory == NULL)
   {
-    printf("Could'not allocate enough memory (%x) for the test\n", MEMORY_SIZE);
+    printf("Could not allocate enough memory (%x) for the test\n", MEMORY_SIZE);
     return -1;
   }
 
   i8080 cpu;
+  cpu.read_byte = &read_byte;
+  cpu.write_byte = &write_byte;
+
+  // JUST TO TEST THAT IT WORKS  - STARTS
+  i8080_init(&cpu);
+  cpu.c = 0x69;
+  printf("b: %d\n", cpu.b);
+  memory[0] = 0x41; // MOV B,C
+  i8080_step(&cpu);
+  printf("b: %d\n", cpu.b);
+  // JUST TO TEST THAT IT WORKS  - END
 
   free(memory);
   return 0;

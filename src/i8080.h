@@ -38,10 +38,14 @@ typedef struct i8080
 
   // Some other necessary state
   bool halted;
-  bool interrupted;
+
+  // Interrupts
+  uint8_t cycles;
+  bool interrupt_pending;
 } i8080;
 
-void i8080_init(i8080 *const p);
-void i8080_step(i8080 *const p);
+void i8080_init(i8080 *p);
+void i8080_step(i8080 *p);
+void i8080_interrupt(i8080 *p, uint8_t opcode);
 
 #endif // i8080_H
