@@ -62,5 +62,5 @@ void i8080_init(i8080 *p)
 
 void i8080_step(i8080 *p)
 {
-  step_instruction(p);
+  process_instruction(p);
 }

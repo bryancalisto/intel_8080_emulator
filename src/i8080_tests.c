@@ -34,10 +34,18 @@ int main()
   // JUST TO TEST THAT IT WORKS  - STARTS
   i8080_init(&cpu);
   cpu.c = 0x69;
-  printf("b: %d\n", cpu.b);
+  printf("B before MOV B,C (C is 0x69): %d\n", cpu.b);
   memory[0] = 0x41; // MOV B,C
   i8080_step(&cpu);
-  printf("b: %d\n", cpu.b);
+  printf("B after MOV B,C: %d\n", cpu.b);
+  if (cpu.b == cpu.c)
+  {
+    printf("OK!");
+  }
+  else
+  {
+    printf("ERROR");
+  }
   // JUST TO TEST THAT IT WORKS  - END
 
   free(memory);
