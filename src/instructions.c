@@ -7,9 +7,41 @@ static inline uint16_t join_hl(i8080 *p)
   return (p->h << 8) | p->l;
 }
 
+// Joins two registers to form a 16 bit address
+static inline uint16_t join_for_16_bit(uint8_t high, uint8_t low)
+{
+  return (high << 8) | low;
+}
+
 static inline uint8_t read_byte(i8080 *p, uint16_t addr)
 {
   return p->read_byte(addr);
+}
+
+static inline bool parity(uint8_t value)
+{
+  uint8_t ones = 0;
+
+  for (int i = 0; i < 8; i++)
+  {
+    ones += ((value >> i) & 1);
+  }
+
+  return (ones & 1) == 0;
+}
+
+static inline void update_z_s_p_ac(i8080 *p, uint8_t value)
+{
+  p->zf = value == 0;
+  p->sf = (value >> 7);
+  p->pf = parity(value);
+  p->acf = (value & 0xf) == 0;
+}
+
+static inline void update_cf(i8080 *p, uint8_t val_1, uint8_t val_2)
+{
+  uint16_t sum = val_1 + val_2 + p->cf;
+  p->cf = (sum >> 8) > 0;
 }
 
 static inline void write_byte(i8080 *p, uint16_t addr, uint8_t data)
@@ -20,9 +52,110 @@ static inline void write_byte(i8080 *p, uint16_t addr, uint8_t data)
 void process_instruction(i8080 *p)
 {
   uint16_t opcode = p->read_byte(p->pc);
+  uint16_t tmp_16;
+  uint8_t tmp_8;
 
   switch (opcode)
   {
+  case 0x00: // NOP
+    break;
+  case 0x01: // LXI B,D16
+    p->c = p->read_byte(p->pc);
+    p->b = p->read_byte(p->pc);
+    break;
+  case 0x02: // STAX B
+    p->write_byte(join_for_16_bit(p->b, p->c), p->a);
+    break;
+  case 0x03: // INX B
+    tmp_16 = join_for_16_bit(p->b, p->c);
+    tmp_16++;
+    p->b = (uint8_t)tmp_16 >> 8;
+    p->c = (uint8_t)tmp_16;
+    break;
+  case 0x04: // INR B
+    p->b++;
+    update_z_s_p_ac(p, p->b);
+    break;
+  case 0x05: // DCR B
+    p->b--;
+    update_z_s_p_ac(p, p->b);
+    break;
+  case 0x06: // MVI B, D8
+    p->b = p->read_byte(p->pc);
+    break;
+  case 0x07: // RLC
+    tmp_8 = p->a;
+    p->a = (p->a << 1) | (tmp_8 >> 7);
+    p->cf = (tmp_8 >> 7);
+    break;
+  case 0x08: // Undocumented
+    break;
+  case 0x09:
+    uint16_t hl = join_for_16_bit(p->h, p->l);
+    uint16_t bc = join_for_16_bit(p->b, p->c);
+    tmp_16 = hl + bc;
+    p->h = (uint8_t)tmp_16 >> 8;
+    p->l = (uint8_t)tmp_16;
+    update_cf(p, hl, bc);
+    break;
+  case 0x0a: // LDAX B
+    p->b = p->read_byte(join_for_16_bit(p->b, p->c));
+    break;
+  case 0x0b: // DCR B
+    tmp_16 = join_for_16_bit(p->b, p->c);
+    tmp_16--;
+    p->b = (uint8_t)tmp_16 >> 8;
+    p->c = (uint8_t)tmp_16;
+    break;
+  case 0x0c: // INR C
+    p->c++;
+    update_z_s_p_ac(p, p->c);
+    break;
+  case 0x0d: // DCR C
+    p->c--;
+    update_z_s_p_ac(p, p->c);
+    break;
+  case 0x0e: // MVI C, D8
+    p->c = p->read_byte(p->pc);
+    break;
+  case 0x0f: // RRC
+    tmp_8 = p->a;
+    p->a = (p->a >> 1) | (tmp_8 << 7);
+    p->cf = (tmp_8 & 1);
+    break;
+  case 0x10: // Undocumented
+    break;
+  case 0x11: // LXI D,D16
+    p->e = p->read_byte(p->pc);
+    p->d = p->read_byte(p->pc);
+    break;
+  case 0x12: // STAX D
+    p->write_byte(join_for_16_bit(p->d, p->e), p->a);
+    break;
+  case 0x13: // INX D
+    tmp_16 = join_for_16_bit(p->d, p->e);
+    tmp_16++;
+    p->d = (uint8_t)tmp_16 >> 8;
+    p->e = (uint8_t)tmp_16;
+    break;
+  case 0x14: // INR D
+    p->d++;
+    update_z_s_p_ac(p, p->d);
+    break;
+  case 0x15: // DCR D
+    p->d--;
+    update_z_s_p_ac(p, p->d);
+    break;
+  case 0x16: // MVI D, D8
+    p->d = p->read_byte(p->pc);
+    break;
+  case 0x17: // RAL
+    tmp_8 = p->a;
+    p->a = (p->a << 1) | p->cf;
+    p->cf = (tmp_8 >> 7);
+    break;
+  case 0x18: // Undocumented
+    break;
   case 0x40: // MOV B,B
     p->b = p->b;
     break;
