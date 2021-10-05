@@ -63,7 +63,7 @@ static inline void write_byte(i8080 *p, uint16_t addr, uint8_t data)
 
 void process_instruction(i8080 *p)
 {
-  uint16_t opcode = p->read_byte(p->pc);
+  uint16_t opcode = p->read_byte(p->pc++);
   uint16_t tmp_16;
   uint8_t tmp_8;
 
@@ -73,7 +73,7 @@ void process_instruction(i8080 *p)
     break;
   case 0x01: // LXI B,D16
     p->c = p->read_byte(p->pc);
-    p->b = p->read_byte(p->pc);
+    p->b = p->read_byte(++p->pc);
     break;
   case 0x02: // STAX B
     p->write_byte(join_for_16_bit(p->b, p->c), p->a);
@@ -93,7 +93,7 @@ void process_instruction(i8080 *p)
     update_z_s_p_ac(p, p->b);
     break;
   case 0x06: // MVI B, D8
-    p->b = p->read_byte(p->pc);
+    p->b = p->read_byte(p->pc++);
     break;
   case 0x07: // RLC
     tmp_8 = p->a;
@@ -128,7 +128,7 @@ void process_instruction(i8080 *p)
     update_z_s_p_ac(p, p->c);
     break;
   case 0x0e: // MVI C, D8
-    p->c = p->read_byte(p->pc);
+    p->c = p->read_byte(p->pc++);
     break;
   case 0x0f: // RRC
     tmp_8 = p->a;
@@ -139,7 +139,7 @@ void process_instruction(i8080 *p)
     break;
   case 0x11: // LXI D,D16
     p->e = p->read_byte(p->pc);
-    p->d = p->read_byte(p->pc);
+    p->d = p->read_byte(++p->pc);
     break;
   case 0x12: // STAX D
     p->write_byte(join_for_16_bit(p->d, p->e), p->a);
@@ -159,7 +159,7 @@ void process_instruction(i8080 *p)
     update_z_s_p_ac(p, p->d);
     break;
   case 0x16: // MVI D, D8
-    p->d = p->read_byte(p->pc);
+    p->d = p->read_byte(p->pc++);
     break;
   case 0x17: // RAL
     tmp_8 = p->a;
@@ -194,7 +194,7 @@ void process_instruction(i8080 *p)
     update_z_s_p_ac(p, p->e);
     break;
   case 0x1e: // MVI E, D8
-    p->e = p->read_byte(p->pc);
+    p->e = p->read_byte(p->pc++);
     break;
   case 0x1f: // RAR
     tmp_8 = p->a;
@@ -205,10 +205,11 @@ void process_instruction(i8080 *p)
     break;
   case 0x21: // LXI H,D16
     p->l = p->read_byte(p->pc);
-    p->h = p->read_byte(p->pc);
+    p->h = p->read_byte(++p->pc);
     break;
   case 0x22: // SHLD  addr
     uint16_t addr = read_word(p, p->pc);
+    p->pc += 2;
     p->write_byte(addr, p->l);
     p->write_byte(addr + 1, p->h);
     break;
@@ -227,7 +228,7 @@ void process_instruction(i8080 *p)
     update_z_s_p_ac(p, p->h);
     break;
   case 0x26: // MVI H, D8
-    p->h = p->read_byte(p->pc);
+    p->h = p->read_byte(p->pc++);
     break;
   case 0x27: // DAA (especial). Not sure what to implement here yet
     if (((p->a & 0x0F) > 9) || (p->acf))
@@ -264,6 +265,7 @@ void process_instruction(i8080 *p)
     break;
   case 0x2a: // LHLD D
     int16_t addr = read_word(p, p->pc);
+    p->pc += 2;
     p->l = p->read_byte(p, addr);
     p->h = p->read_byte(p, addr + 1);
     break;
@@ -282,12 +284,77 @@ void process_instruction(i8080 *p)
     update_z_s_p_ac(p, p->l);
     break;
   case 0x2e: // MVI L, D8
-    p->l = p->read_byte(p->pc);
+    p->l = p->read_byte(p->pc++);
     break;
   case 0x2f: // CMA
     p->a = !p->a;
     break;
   case 0x30: // Undocumented
+    break;
+  case 0x31: // LXI SP,D16
+    uint8_t low = p->read_byte(p->pc);
+    uint8_t high = p->read_byte(++p->pc);
+    p->sp = ((uint16_t)high << 8) | low;
+    break;
+  case 0x32: // STA  addr
+    uint16_t addr = read_word(p, p->pc);
+    p->pc += 2;
+    p->write_byte(addr, p->a);
+    break;
+  case 0x33: // INX SP
+    p->sp++;
+    break;
+  case 0x34: // INR M
+    tmp_16 = join_hl(p);
+    uint8_t val = read_byte(p, tmp_16);
+    val++;
+    write_byte(p, tmp_16, val);
+    update_z_s_p_ac(p, val);
+    break;
+  case 0x35: // DCR M
+    tmp_16 = join_hl(p);
+    uint8_t val = read_byte(p, tmp_16);
+    val--;
+    write_byte(p, tmp_16, val);
+    update_z_s_p_ac(p, val);
+    break;
+  case 0x36: // MVI M, D8
+    write_byte(p, join_hl(p), p->read_byte(p->pc++));
+    break;
+  case 0x37: // STC
+    p->cf = 1;
+    break;
+  case 0x38: // Undocumented
+    break;
+  case 0x39: // DAD SP
+    tmp_16 = join_for_16_bit(p->h, p->l) + p->sp;
+    p->h = (uint8_t)tmp_16 >> 8;
+    p->l = (uint8_t)tmp_16 & 0xff;
+    // update carry flag
+    uint32_t sum = tmp_16 + p->cf;
+    p->cf = (sum >> 16);
+    break;
+  case 0x3a: // LDA addr
+    int16_t addr = read_word(p, p->pc);
+    p->pc += 2;
+    p->a = p->read_byte(p, addr);
+    break;
+  case 0x3b: // DCX SP
+    p->sp--;
+    break;
+  case 0x3c: // INR A
+    p->a++;
+    update_z_s_p_ac(p, p->a);
+    break;
+  case 0x3d: // DCR A
+    p->a--;
+    update_z_s_p_ac(p, p->a);
+    break;
+  case 0x3e: // MVI A, D8
+    p->a = p->read_byte(p->pc++);
+    break;
+  case 0x3f: // CMC
+    p->cf = !p->cf;
     break;
   case 0x40: // MOV B,B
     p->b = p->b;
