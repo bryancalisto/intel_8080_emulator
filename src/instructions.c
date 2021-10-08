@@ -61,6 +61,21 @@ static inline void write_byte(i8080 *p, uint16_t addr, uint8_t data)
   p->write_byte(addr, data);
 }
 
+static inline void update_zf(i8080 *p)
+{
+  p->zf = p->a == 0;
+  p->sf = p->a & 0x80;
+}
+
+static inline void add_byte(i8080 *p, uint8_t to_add, uint8_t carry)
+{
+  uint16_t value = (p->a + to_add + carry) & 0xff;
+  p->acf = (p->a ^ to_add ^ value) & 0x10;
+  p->a = (uint8_t)value;
+  p->cf = value > 255;
+  update_zf(p);
+}
+
 void process_instruction(i8080 *p)
 {
   uint16_t opcode = p->read_byte(p->pc++);
@@ -547,6 +562,54 @@ void process_instruction(i8080 *p)
     break;
   case 0x7f: // MOV a,A
     p->a = p->a;
+    break;
+  case 0x80: // ADD B
+    add_byte(p, p->b, 0);
+    break;
+  case 0x81: // ADD C
+    add_byte(p, p->c, 0);
+    break;
+  case 0x82: // ADD D
+    add_byte(p, p->d, 0);
+    break;
+  case 0x83: // ADD E
+    add_byte(p, p->e, 0);
+    break;
+  case 0x84: // ADD H
+    add_byte(p, p->h, 0);
+    break;
+  case 0x85: // ADD L
+    add_byte(p, p->l, 0);
+    break;
+  case 0x86: // ADD M
+    add_byte(p, read_byte(join_hl(p)), 0);
+    break;
+  case 0x87: // ADD A
+    add_byte(p, p->a, 0);
+    break;
+  case 0x88: // ADC B
+    add_byte(p, p->b, p->cf);
+    break;
+  case 0x89: // ADC C
+    add_byte(p, p->c, p->cf);
+    break;
+  case 0x8a: // ADC D
+    add_byte(p, p->d, p->cf);
+    break;
+  case 0x8b: // ADC E
+    add_byte(p, p->e, p->cf);
+    break;
+  case 0x8c: // ADC H
+    add_byte(p, p->h, p->cf);
+    break;
+  case 0x8d: // ADC L
+    add_byte(p, p->l, p->cf);
+    break;
+  case 0x8e: // ADC M
+    add_byte(p, read_byte(join_hl(p)), p->cf);
+    break;
+  case 0x8f: // ADC A
+    add_byte(p, p->a, p->cf);
     break;
   default:
     break;
