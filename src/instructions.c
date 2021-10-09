@@ -61,7 +61,7 @@ static inline void write_byte(i8080 *p, uint16_t addr, uint8_t data)
   p->write_byte(addr, data);
 }
 
-static inline void update_zf(i8080 *p)
+static inline void update_zf_sf(i8080 *p)
 {
   p->zf = p->a == 0;
   p->sf = p->a & 0x80;
@@ -73,7 +73,31 @@ static inline void add_byte(i8080 *p, uint8_t to_add, uint8_t carry)
   p->acf = (p->a ^ to_add ^ value) & 0x10;
   p->a = (uint8_t)value;
   p->cf = value > 255;
-  update_zf(p);
+  update_zf_sf(p);
+}
+
+static inline void sub_byte(i8080 *p, uint8_t to_add, uint8_t carry)
+{
+  uint16_t value = (p->a - to_add - carry) & 0xff;
+  p->acf = (p->a ^ to_add ^ value) & 0x10;
+  p->a = (uint8_t)value;
+  p->cf = value > 255;
+  update_zf_sf(p);
+}
+
+static inline void and_byte(i8080 *p, uint8_t to_and)
+{
+  p->a = p->a & to_and;
+}
+
+static inline void xor_byte(i8080 *p, uint8_t to_xor)
+{
+  p->a = p->a ^ to_xor;
+}
+
+static inline void or_byte(i8080 *p, uint8_t to_or)
+{
+  p->a = p->a | to_or;
 }
 
 void process_instruction(i8080 *p)
@@ -610,6 +634,126 @@ void process_instruction(i8080 *p)
     break;
   case 0x8f: // ADC A
     add_byte(p, p->a, p->cf);
+    break;
+  case 0x90: // SUB B
+    sub_byte(p, p->b, 0);
+    break;
+  case 0x91: // SUB C
+    sub_byte(p, p->c, 0);
+    break;
+  case 0x92: // SUB D
+    sub_byte(p, p->d, 0);
+    break;
+  case 0x93: // SUB E
+    sub_byte(p, p->e, 0);
+    break;
+  case 0x94: // SUB H
+    sub_byte(p, p->h, 0);
+    break;
+  case 0x95: // SUB L
+    sub_byte(p, p->l, 0);
+    break;
+  case 0x96: // SUB M
+    sub_byte(p, read_byte(join_hl(p)), 0);
+    break;
+  case 0x97: // SUB A
+    sub_byte(p, p->a, 0);
+    break;
+  case 0x99: // SBB B
+    sub_byte(p, p->b, p->cf);
+    break;
+  case 0x99: // SBB C
+    sub_byte(p, p->c, p->cf);
+    break;
+  case 0x9a: // SBB D
+    sub_byte(p, p->d, p->cf);
+    break;
+  case 0x9b: // SBB E
+    sub_byte(p, p->e, p->cf);
+    break;
+  case 0x9c: // SBB H
+    sub_byte(p, p->h, p->cf);
+    break;
+  case 0x9d: // SBB L
+    sub_byte(p, p->l, p->cf);
+    break;
+  case 0x9e: // SBB M
+    sub_byte(p, read_byte(join_hl(p)), p->cf);
+    break;
+  case 0x9f: // SBB A
+    sub_byte(p, p->a, p->cf);
+    break;
+  case 0xa0: // ANA B
+    and_byte(p, p->b);
+    break;
+  case 0xa1: // ANA C
+    and_byte(p, p->c);
+    break;
+  case 0xa2: // ANA D
+    and_byte(p, p->d);
+    break;
+  case 0xa3: // ANA E
+    and_byte(p, p->e);
+    break;
+  case 0xa4: // ANA H
+    and_byte(p, p->h);
+    break;
+  case 0xa5: // ANA L
+    and_byte(p, p->l);
+    break;
+  case 0xa6: // ANA M
+    and_byte(p, read_byte(join_hl(p)));
+    break;
+  case 0xa7: // ANA A
+    and_byte(p, p->a);
+    break;
+  case 0xa8: // XRA B
+    xor_byte(p, p->b);
+    break;
+  case 0xa9: // XRA C
+    xor_byte(p, p->c);
+    break;
+  case 0xaa: // XRA D
+    xor_byte(p, p->d);
+    break;
+  case 0xab: // XRA E
+    xor_byte(p, p->e);
+    break;
+  case 0xac: // XRA H
+    xor_byte(p, p->h);
+    break;
+  case 0xad: // XRA L
+    xor_byte(p, p->l);
+    break;
+  case 0xae: // XRA M
+    xor_byte(p, read_byte(join_hl(p)));
+    break;
+  case 0xaf: // XRA A
+    xor_byte(p, p->a);
+    break;
+  case 0xb0: // ORA B
+    or_byte(p, p->b);
+    break;
+  case 0xb1: // ORA C
+    or_byte(p, p->c);
+    break;
+  case 0xb2: // ORA D
+    or_byte(p, p->d);
+    break;
+  case 0xb3: // ORA E
+    or_byte(p, p->e);
+    break;
+  case 0xb4: // ORA H
+    or_byte(p, p->h);
+    break;
+  case 0xb5: // ORA L
+    or_byte(p, p->l);
+    break;
+  case 0xb6: // ORA M
+    or_byte(p, read_byte(join_hl(p)));
+    break;
+  case 0xb7: // ORA A
+    or_byte(p, p->a);
     break;
   default:
     break;
