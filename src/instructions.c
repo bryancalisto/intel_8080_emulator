@@ -20,8 +20,8 @@ static inline uint8_t read_byte(i8080 *p, uint16_t addr)
 
 static inline uint16_t read_word(i8080 *p, uint16_t addr)
 {
-  uint16_t value = p->read_byte(addr + 1) << 8;
-  return value | p->read_byte(addr);
+  uint16_t hi = p->read_byte(addr + 1) << 8;
+  return hi | p->read_byte(addr);
 }
 
 static inline bool parity(uint8_t value)
@@ -34,12 +34,6 @@ static inline bool parity(uint8_t value)
   }
 
   return (ones & 1) == 0;
-}
-
-static inline void update_z_s(i8080 *p)
-{
-  p->zf = p->a == 0;
-  p->sf = p->a & 0x80;
 }
 
 static inline void update_z_s_p_ac(i8080 *p, uint8_t value)
@@ -69,20 +63,21 @@ static inline void update_zf_sf(i8080 *p)
 
 static inline void add_byte(i8080 *p, uint8_t to_add, uint8_t carry)
 {
-  uint16_t value = (p->a + to_add + carry) & 0xff;
+  uint16_t value = (p->a + to_add + carry);
   p->acf = (p->a ^ to_add ^ value) & 0x10;
   p->a = (uint8_t)value;
   p->cf = value > 255;
   update_zf_sf(p);
 }
 
-static inline void sub_byte(i8080 *p, uint8_t to_add, uint8_t carry)
+uint8_t sub_byte(i8080 *p, uint8_t subt, uint8_t borrow)
 {
-  uint16_t value = (p->a - to_add - carry) & 0xff;
-  p->acf = (p->a ^ to_add ^ value) & 0x10;
-  p->a = (uint8_t)value;
-  p->cf = value > 255;
-  update_zf_sf(p);
+  uint8_t subt_ones_comp = (~subt);
+  // One's complement way
+  uint16_t res = p->a + subt_ones + (borrow ? 0 : 1);
+  p->cf = !(res & 0x100);
+  p->acf = ((p->a & 0xF) + (subt_ones & 0xF) + (borrow ? 0 : 1)) & 0x10;
+  return res & 0xff;
 }
 
 static inline void and_byte(i8080 *p, uint8_t to_and)
@@ -100,9 +95,15 @@ static inline void or_byte(i8080 *p, uint8_t to_or)
   p->a = p->a | to_or;
 }
 
+static inline cmp_byte(i8080 *p, uint8_t to_cmp)
+{
+  uint8_t res = p->a - to_cmp;
+  update_z_s_p_ac(p, res);
+}
+
 void process_instruction(i8080 *p)
 {
-  uint16_t opcode = p->read_byte(p->pc++);
+  uint8_t opcode = p->read_byte(p->pc++);
   uint16_t tmp_16;
   uint8_t tmp_8;
 
@@ -290,7 +291,7 @@ void process_instruction(i8080 *p)
       p->cf = 0;
     }
 
-    update_z_s(p);
+    update_zf_sf(p);
     break;
   case 0x28: // Undocumented
     break;
@@ -311,8 +312,8 @@ void process_instruction(i8080 *p)
   case 0x2b: // DCX H
     tmp_16 = join_for_16_bit(p->h, p->l);
     tmp_16--;
-    p->h = (uint8_t)tmp_16 >> 8;
-    p->l = (uint8_t)tmp_16 & 0xff;
+    p->h = (uint8_t)(tmp_16 >> 8);
+    p->l = (uint8_t)(tmp_16 & 0xff);
     break;
   case 0x2c: // INR L
     p->l++;
@@ -333,7 +334,7 @@ void process_instruction(i8080 *p)
   case 0x31: // LXI SP,D16
     uint8_t low = p->read_byte(p->pc);
     uint8_t high = p->read_byte(++p->pc);
-    p->sp = ((uint16_t)high << 8) | low;
+    p->sp = (high << 8) | low;
     break;
   case 0x32: // STA  addr
     uint16_t addr = read_word(p, p->pc);
@@ -367,11 +368,11 @@ void process_instruction(i8080 *p)
     break;
   case 0x39: // DAD SP
     tmp_16 = join_for_16_bit(p->h, p->l) + p->sp;
-    p->h = (uint8_t)tmp_16 >> 8;
-    p->l = (uint8_t)tmp_16 & 0xff;
+    p->h = (uint8_t)(tmp_16 >> 8);
+    p->l = (uint8_t)(tmp_16 & 0xff);
     // update carry flag
     uint32_t sum = tmp_16 + p->cf;
-    p->cf = (sum >> 16);
+    p->cf = sum >> 16;
     break;
   case 0x3a: // LDA addr
     int16_t addr = read_word(p, p->pc);
@@ -584,7 +585,7 @@ void process_instruction(i8080 *p)
   case 0x7e: // MOV A,M
     p->a = read_byte(p, join_hl(p));
     break;
-  case 0x7f: // MOV a,A
+  case 0x7f: // MOV A,A
     p->a = p->a;
     break;
   case 0x80: // ADD B
@@ -636,52 +637,52 @@ void process_instruction(i8080 *p)
     add_byte(p, p->a, p->cf);
     break;
   case 0x90: // SUB B
-    sub_byte(p, p->b, 0);
+    p->a = sub_byte(p, p->b, 0);
     break;
   case 0x91: // SUB C
-    sub_byte(p, p->c, 0);
+    p->a = sub_byte(p, p->c, 0);
     break;
   case 0x92: // SUB D
-    sub_byte(p, p->d, 0);
+    p->a = sub_byte(p, p->d, 0);
     break;
   case 0x93: // SUB E
-    sub_byte(p, p->e, 0);
+    p->a = sub_byte(p, p->e, 0);
     break;
   case 0x94: // SUB H
-    sub_byte(p, p->h, 0);
+    p->a = sub_byte(p, p->h, 0);
     break;
   case 0x95: // SUB L
-    sub_byte(p, p->l, 0);
+    p->a = sub_byte(p, p->l, 0);
     break;
   case 0x96: // SUB M
-    sub_byte(p, read_byte(join_hl(p)), 0);
+    p->a = sub_byte(p, read_byte(join_hl(p)), 0);
     break;
   case 0x97: // SUB A
-    sub_byte(p, p->a, 0);
+    p->a = sub_byte(p, p->a, 0);
     break;
   case 0x99: // SBB B
-    sub_byte(p, p->b, p->cf);
+    p->a = sub_byte(p, p->b, p->cf);
     break;
   case 0x99: // SBB C
-    sub_byte(p, p->c, p->cf);
+    p->a = sub_byte(p, p->c, p->cf);
     break;
   case 0x9a: // SBB D
-    sub_byte(p, p->d, p->cf);
+    p->a = sub_byte(p, p->d, p->cf);
     break;
   case 0x9b: // SBB E
-    sub_byte(p, p->e, p->cf);
+    p->a = sub_byte(p, p->e, p->cf);
     break;
   case 0x9c: // SBB H
-    sub_byte(p, p->h, p->cf);
+    p->a = sub_byte(p, p->h, p->cf);
     break;
   case 0x9d: // SBB L
-    sub_byte(p, p->l, p->cf);
+    p->a = sub_byte(p, p->l, p->cf);
     break;
   case 0x9e: // SBB M
-    sub_byte(p, read_byte(join_hl(p)), p->cf);
+    p->a = sub_byte(p, read_byte(join_hl(p)), p->cf);
     break;
   case 0x9f: // SBB A
-    sub_byte(p, p->a, p->cf);
+    p->a = sub_byte(p, p->a, p->cf);
     break;
   case 0xa0: // ANA B
     and_byte(p, p->b);
@@ -755,7 +756,33 @@ void process_instruction(i8080 *p)
   case 0xb7: // ORA A
     or_byte(p, p->a);
     break;
+  case 0xb8: // CMP B
+    cmp_byte(p, p->b);
+    break;
+  case 0xb9: // CMP C
+    cmp_byte(p, p->c);
+    break;
+  case 0xba: // CMP D
+    cmp_byte(p, p->d);
+    break;
+  case 0xbb: // CMP E
+    cmp_byte(p, p->e);
+    break;
+  case 0xbc: // CMP H
+    cmp_byte(p, p->h);
+    break;
+  case 0xbd: // CMP L
+    cmp_byte(p, p->l);
+    break;
+  case 0xbe: // CMP M
+    cmp_byte(p, read_byte(join_hl(p)));
+    break;
+  case 0xbf: // CMP A
+    cmp_byte(p, p->a);
+    break;
   default:
+    fprintf(stderr, "Unrecognized opcode: %x\n", opcode);
+    exit(-1);
     break;
   }
 }
