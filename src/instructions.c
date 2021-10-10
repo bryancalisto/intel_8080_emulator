@@ -55,6 +55,12 @@ static inline void write_byte(i8080 *p, uint16_t addr, uint8_t data)
   p->write_byte(addr, data);
 }
 
+static inline void write_word(i8080 *p, uint16_t addr, uint16_t data)
+{
+  p->write_byte(addr + 1, data >> 8);
+  p->write_byte(addr, data & 0xff);
+}
+
 static inline void update_zf_sf(i8080 *p)
 {
   p->zf = p->a == 0;
@@ -95,10 +101,35 @@ static inline void or_byte(i8080 *p, uint8_t to_or)
   p->a = p->a | to_or;
 }
 
-static inline cmp_byte(i8080 *p, uint8_t to_cmp)
+static inline void cmp_byte(i8080 *p, uint8_t to_cmp)
 {
   uint8_t res = p->a - to_cmp;
   update_z_s_p_ac(p, res);
+}
+
+static inline void stack_push(i8080 *p, uint16_t to_push)
+{
+  p->sp -= 2;
+  write_word(p, p->sp, to_push);
+}
+
+static inline uint16_t stack_pop(i8080 *p)
+{
+  uint16_t val = read_word(p, p->sp);
+  p->sp += 2;
+  return val;
+}
+
+static inline void ret(i8080 *p)
+{
+  p->pc = stack_pop(p->sp);
+  p->sp += 2;
+}
+
+static inline void call(i8080 *p, uint16_t addr)
+{
+  stack_push(p->pc);
+  p->pc = addr;
 }
 
 void process_instruction(i8080 *p)
@@ -779,6 +810,97 @@ void process_instruction(i8080 *p)
     break;
   case 0xbf: // CMP A
     cmp_byte(p, p->a);
+    break;
+  case 0xc0: // RNZ
+    if (!p->zf)
+    {
+      ret(p);
+    }
+    break;
+  case 0xc1: // POP B
+    uint16_t val = stack_pop(p);
+    p->b = val >> 8;
+    p->c = val & 0xff;
+  case 0xc2: // JNZ adr
+    if (!p->zf)
+    {
+      p->pc = read_word(p);
+    }
+    p->pc += 2;
+    break;
+  case 0xc3: // JMP adr
+    p->pc = read_word(p);
+    p->pc += 2;
+    break;
+  case 0xc4: // CNZ adr
+    if (!p->zf)
+    {
+      uint16_t addr = read_word(p, p->pc);
+      p->pc += 2;
+      call(p, addr);
+    }
+    else
+    {
+      p->pc += 2;
+    }
+    break;
+  case 0xc5: // PUSH B
+    stack_push(p, (p->b << 8) | p->c);
+    break;
+  case 0xc6: // ADI D8
+    add_byte(p, read_byte(p, p->pc), 0);
+    p->pc++;
+    break;
+  case 0xc7: // RST 0
+    call(p, 0);
+    break;
+  case 0xc8: // RZ
+    if (p->zf)
+    {
+      ret(p);
+    }
+    break;
+  case 0xc9: // RET
+    ret(p);
+    break;
+  case 0xca: // JZ adr
+    if (p->zf)
+    {
+      p->pc = read_word(p, p->pc);
+    }
+    p->pc += 2;
+    break;
+  case 0xcb: // Undocumented
+    break;
+  case 0xcc: // CZ adr
+    if (p->zf)
+    {
+      uint16_t addr = read_word(p, p->pc);
+      p->pc += 2;
+      call(p, addr);
+    }
+    else
+    {
+      p->pc += 2;
+    }
+    break;
+  case 0xcd: // CALL addr
+    uint16_t addr = read_word(p, p->pc);
+    p->pc += 2;
+    call(p, addr);
+    break;
+  case 0xce: //ACI D8
+    add_byte(p, read_byte(p, p->pc), p->cf);
+    p->pc++;
+    break;
+  case 0xcf: // RST 1
+    call(0x8);
+    break;
+  case 0xd0: // RNC
+    if (!p->cf)
+    {
+      ret(p);
+    }
     break;
   default:
     fprintf(stderr, "Unrecognized opcode: %x\n", opcode);
