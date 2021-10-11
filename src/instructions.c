@@ -1,6 +1,12 @@
 #include "i8080.h"
 #include "instructions.h"
 
+static void non_implem_error(uint8_t opcode)
+{
+  fprintf(stderr, "Not implemented: %x\n", opcode);
+  exit(-1);
+}
+
 // Joins registers h and l to form a 16 bit address
 static inline uint16_t join_hl(i8080 *p)
 {
@@ -901,6 +907,91 @@ void process_instruction(i8080 *p)
     {
       ret(p);
     }
+    break;
+  case 0xd1: // POP D
+    uint16_t val = read_word(p, p->sp);
+    p->d = val >> 8;
+    p->e = val & 0xff;
+    p->sp += 2;
+    break;
+  case 0xd2: //JNC addr
+    if (!p->cf)
+    {
+      uint16_t addr = read_word(p, p->pc);
+      p->pc = addr;
+    }
+    else
+    {
+      p->pc += 2;
+    }
+    break;
+  case 0xd3: // OUT D8 (Especial)
+    non_implem_error(opcode);
+    break;
+  case 0xd4: // CNC addr
+    if (!p->cf)
+    {
+      uint16_t addr = read_word(p, p->pc);
+      p->pc += 2;
+      call(p, addr);
+    }
+    else
+    {
+      p->pc += 2;
+    }
+    break;
+  case 0xd5: // PUSH D
+    stack_push(p, p->d << 8 | p->e);
+    break;
+  case 0xd6: // SUI D8
+    p->a = sub_byte(p, read_byte(p, p->pc), 0);
+    p->pc++;
+    break;
+  case 0xd7: // RST 2
+    call(p, 0x10);
+    break;
+  case 0xd8: // RC
+    if (p->cf)
+    {
+      ret(p);
+    }
+    break;
+  case 0xd9: // Undocumented
+    break;
+  case 0xda: // JC addr
+    if (p->cf)
+    {
+      uint16_t addr = read_word(p, p->pc);
+      p->pc = addr;
+    }
+    else
+    {
+      p->pc += 2;
+    }
+    break;
+  case 0xdb: // IN D8 (Especial)
+    non_implem_error(opcode);
+    break;
+  case 0xdc: // CC addr
+    if (p->cf)
+    {
+      uint16_t addr = read_word(p, p->pc);
+      p->pc += 2;
+      call(p, addr);
+    }
+    else
+    {
+      p->pc += 2;
+    }
+    break;
+  case 0xdd: // Undocumented
+    break;
+  case 0xde: // SBI D8
+    p->a = sub_byte(p, read_byte(p, p->pc), p->cf);
+    p->pc++;
+    break;
+  case 0xdf: // RST 3
+    call(p, 0x18);
     break;
   default:
     fprintf(stderr, "Unrecognized opcode: %x\n", opcode);
