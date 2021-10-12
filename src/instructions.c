@@ -993,6 +993,196 @@ void process_instruction(i8080 *p)
   case 0xdf: // RST 3
     call(p, 0x18);
     break;
+  case 0xe0: // RPO
+    if (!p->pf)
+    {
+      ret(p);
+    }
+    break;
+  case 0xe1: // POP H
+    uint16_t val = stack_pop(p);
+    p->h = val >> 8;
+    p->l = val & 0xff;
+    break;
+  case 0xe2: // JPO addr
+    if (!p->pf)
+    {
+      uint16_t addr = read_word(p, p->pc);
+      p->pc = addr;
+    }
+    else
+    {
+      p->pc += 2;
+    }
+    break;
+  case 0xe3: // XTHL
+    uint16_t val = read_word(p, p->sp);
+    write_word(p, p->sp, join_hl(p));
+    p->h = val >> 8;
+    p->l = val & 0xff;
+    break;
+  case 0xe4: // CPO addr
+    if (!p->pf)
+    {
+      uint16_t addr = read_word(p, p->pc);
+      p->pc += 2;
+      call(p, addr);
+    }
+    else
+    {
+      p->pc += 2;
+    }
+    break;
+  case 0xe5: // PUSH H
+    stack_push(p, (p->h << 8) | p->l);
+    break;
+  case 0xe6: // ANI D8
+    and_byte(p, read_byte(p, p->pc));
+    p->cf = 0;
+    update_z_s_p_ac(p, p->a);
+    p->pc++;
+    break;
+  case 0xe7: // RST 4
+    call(p, 0x20);
+    break;
+  case 0xe8: // RPE
+    if (p->pf)
+    {
+      ret(p);
+    }
+    break;
+  case 0xe9: // PCHL
+    p->pc = (p->h << 8) | p->l;
+    break;
+  case 0xea: // JPE addr
+    if (p->pf)
+    {
+      p->pc = read_word(p, p->pc);
+    }
+    else
+    {
+      p->pc += 2;
+    }
+    break;
+  case 0xeb: // XCHG
+    uint8_t tmp = p->h;
+    p->h = p->d;
+    p->d = tmp;
+    tmp = p->l;
+    p->l = p->e;
+    p->e = tmp;
+    break;
+  case 0xec: // CPE addr
+    if (p->pf)
+    {
+      uint16_t addr = read_word(p, p->pc);
+      p->pc += 2;
+      call(p, addr);
+    }
+    else
+    {
+      p->pc += 2;
+    }
+    break;
+  case 0xed: // Undocumented
+    break;
+  case 0xee: // XRI D8
+    xor_byte(p, read_byte(p, p->pc));
+    p->cf = 0;
+    update_z_s_p_ac(p, p->a);
+    p->pc++;
+    break;
+  case 0xef: // RST 5
+    call(0x28);
+    break;
+  case 0xf0: // RP
+    if (p->sf)
+    {
+      ret(p);
+    }
+    break;
+  case 0xf1: //POP PSW
+    uint16_t flags = stack_pop(p);
+    p->a = flags >> 8;
+    uint8_t psw = af & 0xFF;
+
+    p->sf = (psw >> 7) & 1;
+    p->zf = (psw >> 6) & 1;
+    p->hf = (psw >> 4) & 1;
+    p->pf = (psw >> 2) & 1;
+    p->cf = (psw >> 0) & 1;
+    break;
+  case 0xf2: // JP addr
+    if (!p->sf)
+    {
+      p->pc = read_byte(p, p->pc);
+    }
+    break;
+  case 0xf3: // Especial
+    break;
+  case 0xf4: // CP addr
+    if (p->sf)
+    {
+      p->pc = read_byte(p, p->pc);
+    }
+    break;
+  case 0xf5: // PUSH PSW
+    uint8_t psw = 0;
+    psw |= p->sf << 7;
+    psw |= p->zf << 6;
+    psw |= p->hf << 4;
+    psw |= p->pf << 2;
+    psw |= 1 << 1;
+    psw |= p->cf << 0;
+    stack_push(p, (p->a << 8) | psw);
+    break;
+  case 0xf6: // ORI D8
+    or_byte(p, read_byte(p, p->pc));
+    p->cf = 0;
+    update_z_s_p_ac(p, p->a);
+    p->pc++;
+    break;
+  case 0xf7: // RST 6
+    call(0x30);
+    break;
+  case 0xf8: // RP
+    if (p->sf)
+    {
+      ret(p);
+    }
+    break;
+  case 0xf9: // SPHL
+    p->sp = join_hl(p);
+    break;
+  case 0xfa: // JM addr
+    if (p->sf)
+    {
+      p->pc = read_byte(p, p->pc);
+    }
+    break;
+  case 0xfb: // Especial
+    break;
+  case 0xfc:
+    if (p->sf)
+    {
+      uint16_t addr = read_word(p, p->pc);
+      p->pc += 2;
+      call(p, addr);
+    }
+    else
+    {
+      p->pc += 2;
+    }
+    break;
+  case 0xfd: // Undocumented
+    break;
+  case 0xfe: // CPI D8
+    sub_byte(p, read_byte(p, p->pc), 0);
+    p->pc++;
+    break;
+  case 0xff: // RST 7
+    call(p, 0x38);
+    break;
   default:
     fprintf(stderr, "Unrecognized opcode: %x\n", opcode);
     exit(-1);
