@@ -7,7 +7,7 @@ OBJS = i8080_tests.o i8080.o instructions.o
 all: $(TARGET)
 
 $(TARGET): $(SOURCES)
-	$(CC) -c $(SOURCES)
+	$(CC) $(SOURCES) -o $(TARGET)
 
 clean:
-	del $(OBJS) $(TARGET)
+	rm $(OBJS) $(TARGET)
