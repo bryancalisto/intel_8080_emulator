@@ -38,10 +38,7 @@ uint8_t read_byte(i8080 *p, uint16_t addr)
 
 uint16_t read_word(i8080 *p, uint16_t addr)
 {
-  printf("A: 0x%x\n", p->read_byte(addr));
-  printf("A+1: 0x%x\n", p->read_byte(addr + 1));
   uint16_t hi = p->read_byte(addr + 1) << 8;
-  printf("HII: %u\n", hi);
   return hi | p->read_byte(addr);
 }
 
