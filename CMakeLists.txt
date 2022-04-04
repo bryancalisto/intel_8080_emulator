@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.0)
+project(intel-8080-emulator-tests)
+enable_testing()
+set(CMAKE_C_FLAGS "-Wall -Werror -std=c17")
+add_subdirectory(src)
+add_subdirectory(test)
