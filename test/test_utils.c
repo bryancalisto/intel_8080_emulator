@@ -139,6 +139,19 @@ static void read_word_ok(void **state)
   assert_true(read_word(p, addr2) == data2);
 }
 
+static void parity_ok(void **state)
+{
+  assert_true(parity(0b10101010) == true);
+  assert_true(parity(0b00000000) == true);
+  assert_true(parity(0b11111110) == false);
+}
+
+static void auxiliary_carry_ok()
+{
+  assert_true(auxiliary_carry(0b00101001, 0b01001100) == true);
+  assert_true(auxiliary_carry(0b00101001, 0b01000011) == false);
+}
+
 int main(void)
 {
   const struct CMUnitTest tests[] = {
@@ -148,6 +161,8 @@ int main(void)
       cmocka_unit_test_setup_teardown(write_word_ok, setup, teardown),
       cmocka_unit_test_setup_teardown(read_byte_ok, setup, teardown),
       cmocka_unit_test_setup_teardown(read_word_ok, setup, teardown),
+      cmocka_unit_test(parity_ok),
+      cmocka_unit_test(auxiliary_carry_ok),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);

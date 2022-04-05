@@ -50,8 +50,13 @@ bool parity(uint8_t value)
   {
     ones += ((value >> i) & 1);
   }
+  return ones % 2 == 0;
+}
 
-  return (ones & 1) == 0;
+bool auxiliary_carry(uint8_t a, uint8_t b)
+{
+  uint8_t sum = (a & 0xf) + (b & 0xf);
+  return sum & 0x10;
 }
 
 void update_z_s_p_ac(i8080 *p, uint8_t value)
