@@ -59,13 +59,12 @@ void update_acf(i8080 *p, uint8_t a, uint8_t b, char *mode)
 {
   if (strcmp(mode, "add") == 0)
   {
-    uint8_t sum = (a & 0xf) + (b & 0xf);
+    uint8_t sum = (a & 0x7) + (b & 0x7);
     p->acf = sum >> 3;
   }
   else if (strcmp(mode, "sub") == 0)
   {
-    uint8_t sub = (a & 0xf) - (b & 0xf);
-    p->acf = sub & 0x10;
+    p->acf = (a & 0x7) < (b & 0x7); // If the substraction is a negative number, set the flag
   }
   else if (strcmp(mode, "or") == 0)
   {

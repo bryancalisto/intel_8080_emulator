@@ -32,6 +32,7 @@ void process_instruction(i8080 *p)
     update_z_s_p(p, p->b);
     break;
   case 0x05: // DCR B
+    update_acf(p, p->b, 1, "sub");
     p->b--;
     update_z_s_p(p, p->b);
     break;
@@ -70,6 +71,7 @@ void process_instruction(i8080 *p)
     update_z_s_p(p, p->c);
     break;
   case 0x0d: // DCR C
+    update_acf(p, p->c, 1, "sub");
     p->c--;
     update_z_s_p(p, p->c);
     break;
@@ -102,6 +104,7 @@ void process_instruction(i8080 *p)
     update_z_s_p(p, p->d);
     break;
   case 0x15: // DCR D
+    update_acf(p, p->d, 1, "sub");
     p->d--;
     update_z_s_p(p, p->d);
     break;
@@ -140,6 +143,7 @@ void process_instruction(i8080 *p)
     update_z_s_p(p, p->e);
     break;
   case 0x1d: // DCR E
+    update_acf(p, p->e, 1, "sub");
     p->e--;
     update_z_s_p(p, p->e);
     break;
@@ -177,6 +181,7 @@ void process_instruction(i8080 *p)
     update_z_s_p(p, p->h);
     break;
   case 0x25: // DCR H
+    update_acf(p, p->h, 1, "sub");
     p->h--;
     update_z_s_p(p, p->h);
     break;
@@ -238,6 +243,7 @@ void process_instruction(i8080 *p)
     update_z_s_p(p, p->l);
     break;
   case 0x2d: // DCR L
+    update_acf(p, p->l, 1, "sub");
     p->l--;
     update_z_s_p(p, p->l);
     break;
@@ -316,6 +322,7 @@ void process_instruction(i8080 *p)
     update_z_s_p(p, p->a);
     break;
   case 0x3d: // DCR A
+    update_acf(p, p->a, 1, "sub");
     p->a--;
     update_z_s_p(p, p->a);
     break;
