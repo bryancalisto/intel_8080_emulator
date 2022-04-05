@@ -151,14 +151,14 @@ static void update_acf_ok__sum(void **state)
   i8080 *p = *state;
 
   // Set
-  update_acf(p, 0b00101001, 0b01001100, "add");
+  update_acf(p, 0b00000101, 0b00000100, "add");
   assert_true(p->acf == 1);
 
   p->acf = 0;
 
   // Unset
-  // update_acf(p, 0b00101001, 0b01000011, "add");
-  // assert_true(p->acf == 0);
+  update_acf(p, 0b00000100, 0b00000011, "add");
+  assert_true(p->acf == 0);
 }
 
 // static void update_z_s_p_ac__negatives__ok(void **state)
