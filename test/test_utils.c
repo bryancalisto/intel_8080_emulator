@@ -139,18 +139,40 @@ static void read_word_ok(void **state)
   assert_true(read_word(p, addr2) == data2);
 }
 
-static void parity_ok(void **state)
+static void parity_ok()
 {
   assert_true(parity(0b10101010) == true);
   assert_true(parity(0b00000000) == true);
   assert_true(parity(0b11111110) == false);
 }
 
-static void auxiliary_carry_ok()
+static void update_acf_ok__sum(void **state)
 {
-  assert_true(auxiliary_carry(0b00101001, 0b01001100) == true);
-  assert_true(auxiliary_carry(0b00101001, 0b01000011) == false);
+  i8080 *p = *state;
+
+  // Set
+  update_acf(p, 0b00101001, 0b01001100, "add");
+  assert_true(p->acf == 1);
+
+  p->acf = 0;
+
+  // Unset
+  // update_acf(p, 0b00101001, 0b01000011, "add");
+  // assert_true(p->acf == 0);
 }
+
+// static void update_z_s_p_ac__negatives__ok(void **state)
+// {
+//   i8080 *p = *state;
+//   uint8_t value = 0b11111111; // 255
+
+//   update_z_s_p_ac(p, value);
+
+//   assert_true(p->zf == 0);
+//   assert_true(p->sf == 1);
+//   assert_true(p->pf == true);
+//   assert_true(p->acf ==);
+// }
 
 int main(void)
 {
@@ -162,7 +184,7 @@ int main(void)
       cmocka_unit_test_setup_teardown(read_byte_ok, setup, teardown),
       cmocka_unit_test_setup_teardown(read_word_ok, setup, teardown),
       cmocka_unit_test(parity_ok),
-      cmocka_unit_test(auxiliary_carry_ok),
+      cmocka_unit_test_setup_teardown(update_acf_ok__sum, setup, teardown),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);

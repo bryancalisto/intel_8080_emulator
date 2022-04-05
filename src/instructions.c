@@ -27,12 +27,13 @@ void process_instruction(i8080 *p)
     p->c = (uint8_t)tmp_16 & 0xff;
     break;
   case 0x04: // INR B
+    update_acf(p, p->b, 1, "add");
     p->b++;
-    update_z_s_p_ac(p, p->b);
+    update_z_s_p(p, p->b);
     break;
   case 0x05: // DCR B
     p->b--;
-    update_z_s_p_ac(p, p->b);
+    update_z_s_p(p, p->b);
     break;
   case 0x06: // MVI B, D8
     p->b = p->read_byte(p->pc++);
@@ -64,12 +65,13 @@ void process_instruction(i8080 *p)
     p->c = (uint8_t)tmp_16 & 0xff;
     break;
   case 0x0c: // INR C
+    update_acf(p, p->c, 1, "add");
     p->c++;
-    update_z_s_p_ac(p, p->c);
+    update_z_s_p(p, p->c);
     break;
   case 0x0d: // DCR C
     p->c--;
-    update_z_s_p_ac(p, p->c);
+    update_z_s_p(p, p->c);
     break;
   case 0x0e: // MVI C, D8
     p->c = p->read_byte(p->pc++);
@@ -95,12 +97,13 @@ void process_instruction(i8080 *p)
     p->e = (uint8_t)tmp_16 & 0xff;
     break;
   case 0x14: // INR D
+    update_acf(p, p->d, 1, "add");
     p->d++;
-    update_z_s_p_ac(p, p->d);
+    update_z_s_p(p, p->d);
     break;
   case 0x15: // DCR D
     p->d--;
-    update_z_s_p_ac(p, p->d);
+    update_z_s_p(p, p->d);
     break;
   case 0x16: // MVI D, D8
     p->d = p->read_byte(p->pc++);
@@ -132,12 +135,13 @@ void process_instruction(i8080 *p)
     p->e = (uint8_t)tmp_16 & 0xff;
     break;
   case 0x1c: // INR E
+    update_acf(p, p->e, 1, "add");
     p->e++;
-    update_z_s_p_ac(p, p->e);
+    update_z_s_p(p, p->e);
     break;
   case 0x1d: // DCR E
     p->e--;
-    update_z_s_p_ac(p, p->e);
+    update_z_s_p(p, p->e);
     break;
   case 0x1e: // MVI E, D8
     p->e = p->read_byte(p->pc++);
@@ -168,12 +172,13 @@ void process_instruction(i8080 *p)
     p->l = (uint8_t)tmp_16 & 0xff;
     break;
   case 0x24: // INR H
+    update_acf(p, p->h, 1, "add");
     p->h++;
-    update_z_s_p_ac(p, p->h);
+    update_z_s_p(p, p->h);
     break;
   case 0x25: // DCR H
     p->h--;
-    update_z_s_p_ac(p, p->h);
+    update_z_s_p(p, p->h);
     break;
   case 0x26: // MVI H, D8
     p->h = p->read_byte(p->pc++);
@@ -228,12 +233,13 @@ void process_instruction(i8080 *p)
     p->l = (uint8_t)(tmp_16 & 0xff);
     break;
   case 0x2c: // INR L
+    update_acf(p, p->l, 1, "add");
     p->l++;
-    update_z_s_p_ac(p, p->l);
+    update_z_s_p(p, p->l);
     break;
   case 0x2d: // DCR L
     p->l--;
-    update_z_s_p_ac(p, p->l);
+    update_z_s_p(p, p->l);
     break;
   case 0x2e: // MVI L, D8
     p->l = p->read_byte(p->pc++);
@@ -266,7 +272,7 @@ void process_instruction(i8080 *p)
     uint8_t val = read_byte(p, tmp_16);
     val++;
     write_byte(p, tmp_16, val);
-    update_z_s_p_ac(p, val);
+    update_z_s_p(p, val);
     break;
   }
   case 0x35: // DCR M
@@ -274,7 +280,7 @@ void process_instruction(i8080 *p)
     uint8_t val = read_byte(p, tmp_16);
     val--;
     write_byte(p, tmp_16, val);
-    update_z_s_p_ac(p, val);
+    update_z_s_p(p, val);
     break;
   case 0x36: // MVI M, D8
     write_byte(p, join_hl(p), p->read_byte(p->pc++));
@@ -305,12 +311,13 @@ void process_instruction(i8080 *p)
     p->sp--;
     break;
   case 0x3c: // INR A
+    update_acf(p, p->a, 1, "add");
     p->a++;
-    update_z_s_p_ac(p, p->a);
+    update_z_s_p(p, p->a);
     break;
   case 0x3d: // DCR A
     p->a--;
-    update_z_s_p_ac(p, p->a);
+    update_z_s_p(p, p->a);
     break;
   case 0x3e: // MVI A, D8
     p->a = p->read_byte(p->pc++);
@@ -937,7 +944,7 @@ void process_instruction(i8080 *p)
   case 0xe6: // ANI D8
     and_byte(p, read_byte(p, p->pc));
     p->cf = 0;
-    update_z_s_p_ac(p, p->a);
+    update_z_s_p(p, p->a);
     p->pc++;
     break;
   case 0xe7: // RST 4
@@ -989,7 +996,7 @@ void process_instruction(i8080 *p)
   case 0xee: // XRI D8
     xor_byte(p, read_byte(p, p->pc));
     p->cf = 0;
-    update_z_s_p_ac(p, p->a);
+    update_z_s_p(p, p->a);
     p->pc++;
     break;
   case 0xef: // RST 5
@@ -1043,7 +1050,7 @@ void process_instruction(i8080 *p)
   case 0xf6: // ORI D8
     or_byte(p, read_byte(p, p->pc));
     p->cf = 0;
-    update_z_s_p_ac(p, p->a);
+    update_z_s_p(p, p->a);
     p->pc++;
     break;
   case 0xf7: // RST 6

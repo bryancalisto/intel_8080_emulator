@@ -1,6 +1,7 @@
 #include "i8080.h"
 #include "instructions.h"
 #include <stdlib.h>
+#include <string.h>
 
 void non_implem_error(uint8_t opcode)
 {
@@ -53,18 +54,46 @@ bool parity(uint8_t value)
   return ones % 2 == 0;
 }
 
-bool auxiliary_carry(uint8_t a, uint8_t b)
+// Updates the auxiliary carry flag
+void update_acf(i8080 *p, uint8_t a, uint8_t b, char *mode)
 {
-  uint8_t sum = (a & 0xf) + (b & 0xf);
-  return sum & 0x10;
+  if (strcmp(mode, "add") == 0)
+  {
+    uint8_t sum = (a & 0xf) + (b & 0xf);
+    p->acf = sum >> 4;
+  }
+  else if (strcmp(mode, "sub") == 0)
+  {
+    uint8_t sub = (a & 0xf) - (b & 0xf);
+    p->acf = sub & 0x10;
+  }
+  else if (strcmp(mode, "or") == 0)
+  {
+    uint8_t sub = (a & 0xf) - (b & 0xf);
+    p->acf = sub & 0x10;
+  }
+  else if (strcmp(mode, "and") == 0)
+  {
+    uint8_t sub = (a & 0xf) - (b & 0xf);
+    p->acf = sub & 0x10;
+  }
+  else if (strcmp(mode, "xor") == 0)
+  {
+    uint8_t sub = (a & 0xf) - (b & 0xf);
+    p->acf = sub & 0x10;
+  }
+  else
+  {
+    fprintf(stderr, "Unsupported mode: %s\n", mode);
+    exit(-1);
+  }
 }
 
-void update_z_s_p_ac(i8080 *p, uint8_t value)
+void update_z_s_p(i8080 *p, uint8_t value)
 {
   p->zf = value == 0;
   p->sf = (value >> 7);
   p->pf = parity(value);
-  p->acf = (value & 0xf) == 0;
 }
 
 void update_cf(i8080 *p, uint8_t val_1, uint8_t val_2)
@@ -116,7 +145,8 @@ void or_byte(i8080 *p, uint8_t to_or)
 void cmp_byte(i8080 *p, uint8_t to_cmp)
 {
   uint8_t res = p->a - to_cmp;
-  update_z_s_p_ac(p, res);
+  update_acf(p, p->a, to_cmp, "sub");
+  update_z_s_p(p, res);
 }
 
 void stack_push(i8080 *p, uint16_t to_push)

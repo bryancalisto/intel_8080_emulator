@@ -16,9 +16,9 @@ uint16_t read_word(i8080 *p, uint16_t addr);
 
 bool parity(uint8_t value);
 
-bool auxiliary_carry(uint8_t a, uint8_t b);
+bool update_acf(i8080 *p, uint8_t a, uint8_t b, char *mode);
 
-void update_z_s_p_ac(i8080 *p, uint8_t value);
+void update_z_s_p(i8080 *p, uint8_t value);
 
 void update_cf(i8080 *p, uint8_t val_1, uint8_t val_2);
 
