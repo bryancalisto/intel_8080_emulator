@@ -151,14 +151,16 @@ static void update_acf_ok__sum(void **state)
   i8080 *p = *state;
 
   // Set
-  update_acf(p, 0b00000101, 0b00000100, "add");
+  uint8_t adjusted = update_acf(p, 0b00100101, 0b01001000, "add"); // Results in 6D, after adjusting it should be 73
   assert_true(p->acf == 1);
+  assert_true(adjusted == 0b01110011);
 
   p->acf = 0;
 
   // Unset
-  update_acf(p, 0b00000100, 0b00000011, "add");
+  adjusted = update_acf(p, 0b00000100, 0b00000011, "add");
   assert_true(p->acf == 0);
+  assert_true(adjusted == 0b00000111);
 }
 
 static void update_acf_ok__sub(void **state)

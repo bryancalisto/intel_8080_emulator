@@ -55,12 +55,20 @@ bool parity(uint8_t value)
 }
 
 // Updates the auxiliary carry flag
-void update_acf(i8080 *p, uint8_t a, uint8_t b, char *mode)
+uint8_t update_acf(i8080 *p, uint8_t a, uint8_t b, char *mode)
 {
   if (strcmp(mode, "add") == 0)
   {
-    uint8_t sum = (a & 0x7) + (b & 0x7);
-    p->acf = sum >> 3;
+    uint8_t sum = a + b;
+
+    if ((sum & 0xf) > 9)
+    {
+      p->acf = 1;
+      return sum + 6;
+    }
+
+    p->acf = (sum >> 4);
+    return sum;
   }
   else if (strcmp(mode, "sub") == 0)
   {
@@ -86,6 +94,8 @@ void update_acf(i8080 *p, uint8_t a, uint8_t b, char *mode)
     fprintf(stderr, "Unsupported mode: %s\n", mode);
     exit(-1);
   }
+
+  return 0; // Just for it to compile
 }
 
 void update_z_s_p(i8080 *p, uint8_t value)
