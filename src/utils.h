@@ -16,8 +16,7 @@ uint16_t read_word(i8080 *p, uint16_t addr);
 
 bool parity(uint8_t value);
 
-// Updates the auxiliary carry flag and returns the adjusted result
-uint8_t update_acf(i8080 *p, uint8_t a, uint8_t b, char *mode);
+void update_acf(i8080 *p, uint8_t a, uint8_t b, char *mode);
 
 void update_z_s_p(i8080 *p, uint8_t value);
 

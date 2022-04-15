@@ -55,53 +55,48 @@ bool parity(uint8_t value)
 }
 
 // Updates the auxiliary carry flag
-uint8_t update_acf(i8080 *p, uint8_t a, uint8_t b, char *mode)
+void update_acf(i8080 *p, uint8_t a, uint8_t b, char *mode)
 {
   if (strcmp(mode, "add") == 0)
   {
-    uint8_t sum = a + b;
+    uint16_t sum = a + b;
 
     if ((sum & 0xf) > 9)
     {
       p->acf = 1;
-      return sum + 6;
     }
-
-    p->acf = (sum >> 4);
-    return sum;
+    else
+    {
+      p->acf = (sum >> 4) & 0xf;
+    }
   }
   else if (strcmp(mode, "sub") == 0)
   {
-    p->acf = (a & 0x7) < (b & 0x7); // If the substraction is a negative number, set the flag
+    // Convert to two's complement and add
+    uint8_t twos_comp = ~b + 1;
+    uint8_t sumLSB = (a & 0xf) + (twos_comp & 0xf);
+    p->acf = sumLSB >> 4;
   }
-  else if (strcmp(mode, "or") == 0)
+  // https://retrocomputing.stackexchange.com/questions/14977/auxiliary-carry-and-the-intel-8080s-logical-instructions
+  else if (strcmp(mode, "or") == 0 || strcmp(mode, "xor") == 0)
   {
-    uint8_t sub = (a & 0xf) - (b & 0xf);
-    p->acf = sub & 0x10;
+    p->acf = 0;
   }
   else if (strcmp(mode, "and") == 0)
   {
-    uint8_t sub = (a & 0xf) - (b & 0xf);
-    p->acf = sub & 0x10;
-  }
-  else if (strcmp(mode, "xor") == 0)
-  {
-    uint8_t sub = (a & 0xf) - (b & 0xf);
-    p->acf = sub & 0x10;
+    p->acf = (a | b) >> 3;
   }
   else
   {
     fprintf(stderr, "Unsupported mode: %s\n", mode);
     exit(-1);
   }
-
-  return 0; // Just for it to compile
 }
 
 void update_z_s_p(i8080 *p, uint8_t value)
 {
-  p->zf = value == 0;
-  p->sf = (value >> 7);
+  p->zf = p->a == 0;
+  p->sf = p->a >> 7;
   p->pf = parity(value);
 }
 

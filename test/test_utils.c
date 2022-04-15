@@ -151,16 +151,14 @@ static void update_acf_ok__sum(void **state)
   i8080 *p = *state;
 
   // Set
-  uint8_t adjusted = update_acf(p, 0b00100101, 0b01001000, "add"); // Results in 6D, after adjusting it should be 73
+  update_acf(p, 0b00100101, 0b01001000, "add"); // Results in 6D, after adjusting it should be 73
   assert_true(p->acf == 1);
-  assert_true(adjusted == 0b01110011);
 
   p->acf = 0;
 
   // Unset
-  adjusted = update_acf(p, 0b00000100, 0b00000011, "add");
+  update_acf(p, 0b00000100, 0b00000011, "add");
   assert_true(p->acf == 0);
-  assert_true(adjusted == 0b00000111);
 }
 
 static void update_acf_ok__sub(void **state)
@@ -168,13 +166,38 @@ static void update_acf_ok__sub(void **state)
   i8080 *p = *state;
 
   // Set
-  update_acf(p, 0b00000010, 0b00000101, "sub");
+  update_acf(p, 0b00111110, 0b00111110, "sub");
   assert_true(p->acf == 1);
 
-  p->acf = 0;
+  // Unset
+  update_acf(p, 0b00000000, 0b00000001, "sub");
+  assert_true(p->acf == 0);
+}
+
+static void update_acf_ok__or_xor(void **state)
+{
+  i8080 *p = *state;
+
+  p->acf = 1;
+  update_acf(p, 0b00100101, 0b01001000, "or"); // Always sets acf to 0
+  assert_true(p->acf == 0);
+
+  p->acf = 1;
+  update_acf(p, 0b00000100, 0b00000011, "xor"); // Always sets acf to 0
+  assert_true(p->acf == 0);
+}
+
+static void update_acf_ok__and(void **state)
+{
+  i8080 *p = *state;
+
+  // Set
+  update_acf(p, 0b00101000, 0b01000000, "and");
+  assert_true(p->acf == 1);
 
   // Unset
-  update_acf(p, 0b00000100, 0b00000011, "sub");
+  p->acf = 1;
+  update_acf(p, 0b00000100, 0b00000011, "and");
   assert_true(p->acf == 0);
 }
 
@@ -203,6 +226,8 @@ int main(void)
       cmocka_unit_test(parity_ok),
       cmocka_unit_test_setup_teardown(update_acf_ok__sum, setup, teardown),
       cmocka_unit_test_setup_teardown(update_acf_ok__sub, setup, teardown),
+      cmocka_unit_test_setup_teardown(update_acf_ok__or_xor, setup, teardown),
+      cmocka_unit_test_setup_teardown(update_acf_ok__and, setup, teardown),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);
