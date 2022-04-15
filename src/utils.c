@@ -59,16 +59,8 @@ void update_acf(i8080 *p, uint8_t a, uint8_t b, char *mode)
 {
   if (strcmp(mode, "add") == 0)
   {
-    uint16_t sum = a + b;
-
-    if ((sum & 0xf) > 9)
-    {
-      p->acf = 1;
-    }
-    else
-    {
-      p->acf = (sum >> 4) & 0xf;
-    }
+    uint8_t sumLSB = (a & 0xf) + (b & 0xf);
+    p->acf = sumLSB >> 4;
   }
   else if (strcmp(mode, "sub") == 0)
   {
