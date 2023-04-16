@@ -1,0 +1,3 @@
+C:/Users/itsme007/Documents/Src/intel_8080_emulator/intel_8080_emulator/build/CMakeFiles/intel_8080_emulator.dir
+C:/Users/itsme007/Documents/Src/intel_8080_emulator/intel_8080_emulator/build/CMakeFiles/edit_cache.dir
+C:/Users/itsme007/Documents/Src/intel_8080_emulator/intel_8080_emulator/build/CMakeFiles/rebuild_cache.dir

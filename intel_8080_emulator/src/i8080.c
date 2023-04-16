@@ -1,5 +1,6 @@
 #include "i8080.h"
 #include "instructions.h"
+#include <stdio.h>
 
 void i8080_init(i8080 *p)
 {

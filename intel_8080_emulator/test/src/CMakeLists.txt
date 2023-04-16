@@ -1,4 +1,4 @@
-include_directories ("${PROJECT_SOURCE_DIR}/src")
+include_directories ("../../include")
 
 add_executable(test_instructions test_instructions.c)
 add_dependencies(test_instructions test_instructions)

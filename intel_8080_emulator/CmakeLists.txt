@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(intel_8080_emulator C)
+
+set(C_STANDARD C17)
+
+set(SOURCES
+  src/i8080.c
+  src/instructions.c
+  src/main.c
+  src/utils.c
+)
+
+add_executable(intel_8080_emulator ${SOURCES})
+
+target_include_directories(intel_8080_emulator
+  PRIVATE
+      ${PROJECT_SOURCE_DIR}/include
+)
